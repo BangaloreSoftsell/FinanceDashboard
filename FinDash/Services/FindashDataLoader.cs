@@ -29,7 +29,6 @@ namespace FinDash.Services
             int sec = timeReceived.Seconds;
             var transactionNumber = now + min + sec;
             //filePath instead of FTP folder
-            //string filePath = @"C:\Users\sweet\Sweety\FHS Michigan\File";
             string filePath = FinDashConstants.filesPath;
             string[] fileEntries = Directory.GetFiles(filePath, "*balance*");
             int curMonth=0, curYear=0;
@@ -80,9 +79,7 @@ namespace FinDash.Services
                                    "INSERT INTO [llac].[Error] (TransactionNumber, SchoolID,ErrorAt,FilesID,ErrorMessage,ErrorLoggedAt)" + "Values ('" + transactionNumber + "','" + reader.GetInt32(2) + "','TransactionBegin()','" + reader.GetInt32(5) + "','Insert Failed','" + timeReceived + "')", con);
                     transError.ExecuteNonQuery();
                 }
-            }
-            Console.WriteLine("Status of Files Check");
-            //status=RowCheck();
+            }                     
             con.Close();
             return status;            
         }
