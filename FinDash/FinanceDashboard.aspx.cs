@@ -3,6 +3,7 @@ using FinDash.Services;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data.OleDb;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
@@ -22,6 +23,7 @@ namespace FinDash
         
         protected void DataLoader_Click(object sender, EventArgs e)
         {
+            //OleDbConnection oleDbConnection=new OleDbConnection(Controller.Connections.DBConn);
             SqlConnection con = new SqlConnection(Controller.Connections.DBConn);
             con.Open();
             ScriptManager.RegisterStartupScript(this, this.GetType(), "alert", "alert('msg');", true);

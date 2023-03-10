@@ -72,3 +72,4 @@ C:\Users\sweet\source\repos\FinDash\FinDash\obj\Debug\FinDash.csproj.CoreCompile
 C:\Users\sweet\source\repos\FinDash\FinDash\obj\Debug\FinDash.csproj.CopyComplete
 C:\Users\sweet\source\repos\FinDash\FinDash\obj\Debug\FinDash.dll
 C:\Users\sweet\source\repos\FinDash\FinDash\obj\Debug\FinDash.pdb
+C:\Users\sweet\source\repos\FinDash\FinDash\obj\Debug\FinDash.csproj.ResolveComReference.cache

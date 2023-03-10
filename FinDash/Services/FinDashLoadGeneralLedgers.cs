@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.OleDb;
 using System.Data.SqlClient;
 using System.Globalization;
 using System.IO;
@@ -7,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using System.Web;
 using FinDash.Constants;
+using FinDash.Logger;
 using Microsoft.Office.Interop.Excel;
 using Excel = Microsoft.Office.Interop.Excel;
 
@@ -14,8 +16,8 @@ namespace FinDash.Services
 {
     public class FinDashLoadGeneralLedgers
     {
-        public void LoadGeneralLedger(string transactionNumber, int curMonth, int curYear, string strTime, TimeSpan timeReceived)
-        {
+        public void LoadGeneralLedger(string transactionNumber, int curMonth, int curYear, string strTime, DateTime timeReceived)
+        {            
             SqlConnection con = new SqlConnection(Controller.Connections.DBConn);
             con.Open();
             string sql = "select FilesAllowed.FileName,Files.Month,Files.Status,files.SchoolID,files.CreatedBy,files.CreatedOn,files.FileID,Schools.FilesPath from  FinDash.llac.Files, FinDash.llac.FilesAllowed ,FinDash.llac.Schools where Files.FileID = FilesAllowed.FilesAllowedID and Schools.SchoolID = FilesAllowed.SchoolID  and Files.Year='" + curYear + "' and Files.Month='" + curMonth + "' and Files.Status ='2' and  FilesAllowed.FileType = '1768'";
@@ -39,9 +41,8 @@ namespace FinDash.Services
                         //sqlDataReader.Close();
                         SqlCommand myUpdate = new SqlCommand("Update FinDash.llac.Files set Files.Status ='3' , ProcessingStarted='" + strTime + "' where Files.FileName='" + fileName + "' and Files.Status='" + fileStatus + "' and Files.Month='" + lastMonth + "'", con);
                         myUpdate.ExecuteNonQuery();
-                        SqlCommand myLogger = new SqlCommand(
-                                       "INSERT INTO [llac].[Logger] (TransactionNumber, SchoolID,ClassCalledFrom,FunctionCalledFrom,Message,LoggedOn,CreatedBy,CreatedOn)" + "Values ('" + transactionNumber + "','" + schoolId + "','LoadGeneralLedgers()','LoadGeneralLedgers()','Updatating the status is successfull','" + timeReceived + "','" + createdBy + "','" + createdOn + "')", con);
-                        myLogger.ExecuteNonQuery();
+                        FinDashLogger finDashLogger = new FinDashLogger();
+                        finDashLogger.Logger(transactionNumber, schoolId, "LoadGeneralLedgers()", "LoadGeneralLedgers()", "Updatating  the status is successfull ", timeReceived, createdBy, createdOn);                       
                     }
                     //Read Excel ColumnCount and Row Count
                     string[] fileEntries = Directory.GetFiles(targetDir, "*gl*");
@@ -64,9 +65,8 @@ namespace FinDash.Services
                                 var colCount = sqlDataCount.GetInt32(1);
                                 if (colcountExcel == colCount)
                                 {
-                                    SqlCommand myLoggerExcel = new SqlCommand(
-                                   "INSERT INTO [llac].[Logger] (TransactionNumber, SchoolID,ClassCalledFrom,FunctionCalledFrom,Message,LoggedOn,CreatedBy,CreatedOn)" + "Values ('" + transactionNumber + "','" + schoolId + "','LoadGeneralLedgers()','LoadGeneralLedgers()','Column Check is successfull','" + timeReceived + "','" + createdBy + "','" + createdOn + "')", con);
-                                    myLoggerExcel.ExecuteNonQuery();
+                                    FinDashLogger finDashLogger = new FinDashLogger();
+                                    finDashLogger.Logger(transactionNumber, schoolId, "LoadGeneralLedgers()", "LoadGeneralLedgers()", "Column Check is successfull ", timeReceived, createdBy, createdOn);                                   
                                     if (schID == 1)
                                     {
                                         //Stanza.GLTransactions
@@ -104,10 +104,10 @@ namespace FinDash.Services
                                     }
                                 }
                                 else
-                                {
-                                    SqlCommand myLoggerExcel = new SqlCommand(
-                                   "INSERT INTO [llac].[Logger] (TransactionNumber, SchoolID,ClassCalledFrom,FunctionCalledFrom,Message,LoggedOn,CreatedBy,CreatedOn)" + "Values ('" + transactionNumber + "','" + sqlDataReader.GetInt32(3) + "','LoadGeneralLedgers()','LoadGeneralLedgers()','Check Failed-Column Count Does not Match','" + TimeSpan.Parse(strTime) + "','" + sqlDataReader.GetInt32(4) + "','" + sqlDataReader.GetTimeSpan(5) + "')", con);
-                                    myLoggerExcel.ExecuteNonQuery();
+                                {                                    
+                                    FinDashLogger finDashLogger = new FinDashLogger();
+                                    finDashLogger.Logger(transactionNumber, schoolId, "LoadGeneralLedgers()", "LoadGeneralLedgers()", "Column count does not match ", timeReceived, createdBy, createdOn);
+
                                     SqlCommand transError = new SqlCommand(
                                                        "INSERT INTO [llac].[Error] (TransactionNumber, SchoolID,ErrorAt,FilesID,ErrorMessage,ErrorLoggedAt)" + "Values ('" + transactionNumber + "','" + sqlDataReader.GetInt32(2) + "','TransactionBegin()','" + sqlDataReader.GetInt32(5) + "','Check Failed:Column Count Does not Match -- Failed','" + timeReceived + "')", con);
                                     transError.ExecuteNonQuery();
@@ -119,10 +119,10 @@ namespace FinDash.Services
                 sqlDataReader.Close();
             }
             else
-            {
-                SqlCommand myLogger = new SqlCommand(
-                                   "INSERT INTO [llac].[Logger] (TransactionNumber, SchoolID,ClassCalledFrom,FunctionCalledFrom,Message,LoggedOn,CreatedBy,CreatedOn)" + "Values ('" + transactionNumber + "','" + sqlDataReader.GetInt32(3) + "','LoadGeneralLedgers()','LoadGeneralLedgers()','Update Failed-No Files in Load Ledgers','" + TimeSpan.Parse(strTime) + "','" + sqlDataReader.GetInt32(4) + "','" + sqlDataReader.GetTimeSpan(5) + "')", con);
-                myLogger.ExecuteNonQuery();
+            {               
+                FinDashLogger finDashLogger = new FinDashLogger();
+                finDashLogger.Logger(transactionNumber, sqlDataReader.GetInt32(3), "LoadGeneralLedgers()", "LoadGeneralLedgers()", "Updatating  the status is successfull ", timeReceived, sqlDataReader.GetInt32(4), sqlDataReader.GetDateTime(5));
+
                 SqlCommand transError = new SqlCommand(
                                    "INSERT INTO [llac].[Error] (TransactionNumber, SchoolID,ErrorAt,FilesID,ErrorMessage,ErrorLoggedAt)" + "Values ('" + transactionNumber + "','" + sqlDataReader.GetInt32(2) + "','TransactionBegin()','" + sqlDataReader.GetInt32(5) + "','Insert Failed','" + timeReceived + "')", con);
                 transError.ExecuteNonQuery();
@@ -132,7 +132,7 @@ namespace FinDash.Services
         private void SetEachRowForMichigan(int rowBegin)
         {
             try
-            {                
+            {
                 SqlConnection con = new SqlConnection(Controller.Connections.DBConn);
                 con.Open();
                 string filePath = FinDashConstants.filesPath;
